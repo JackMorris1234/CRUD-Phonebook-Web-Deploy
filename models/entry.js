@@ -16,6 +16,7 @@ mongoose.connect(url, { family: 4 })
 const entrySchema = new mongoose.Schema({
   name: String,
   number: String,
+  id: String,
 })
 
 entrySchema.set('toJSON', {
