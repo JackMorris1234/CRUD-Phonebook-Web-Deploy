@@ -45,11 +45,17 @@ app.use(cors())
 
 app.get('/info', (request, response) => {
   const dateTime=new Date()
-  response.send(`<p>PhoneBook has info for people</p> <p>${dateTime}</p>`)
+  Entry
+  .countDocuments({})
+  .then(counted=>response.send(`<p>PhoneBook has info for ${counted} people</p> <p>${dateTime}</p>`))
+  
 })
 
 app.get('/api/persons', (request, response) => {
-  Entry.find({}).then(entries=>response.json(entries))
+  Entry
+  .find({})
+  .then(entries=>response.json(entries))
+  .catch(error=>next(error))
 })
 
 // const generateID=()=>{
@@ -72,6 +78,7 @@ app.post('/api/persons', (request, response) => {
     entry
     .save()
     .then(savedEntry=>response.json(savedEntry))
+    .catch(error=>next(error))
 })
 
 app.put('/api/persons/:id', (request,response)=>{
@@ -96,10 +103,7 @@ app.get('/api/persons/:id', (request, response) => {
     .then((entry)=>{
       entry ? response.json(entry) : response.status(404).end()
     })
-    .catch(error=>{
-      console.log(error)
-      response.status(400).send({error: `malformatted id`})
-    })
+    .catch(error=>next(error))
     
 })
 
