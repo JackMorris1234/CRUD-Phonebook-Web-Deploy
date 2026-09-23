@@ -1,8 +1,9 @@
 const mongoose = require('mongoose')
 mongoose.set('strictQuery', false)
-const url = process.env.MONGODB_SECONDARY_URI
+const url = process.env.DATABASE_URL
 
 console.log('connecting to', url)
+console.log("url is", url)
 mongoose.connect(url, { family: 4 })
 
   .then(result => {
