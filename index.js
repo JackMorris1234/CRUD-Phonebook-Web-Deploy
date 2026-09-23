@@ -77,13 +77,16 @@ app.post('/api/persons', (request, response) => {
 app.put('/api/persons/:id', (request,response)=>{
   const id=request.params.id
   const body=request.body
-  persons=persons.map((person)=>person.id===id?{id:id,name:body.name, number:body.number}:person)
-  const person={
-        name: body.name,
-        number: body.number,
-        id: id
+  Entry
+  .findById(id)
+  .then(entry=>{
+    if(!entry){
+      return response.status(404).end()
     }
-  response.json(person)
+    entry.number=body.number
+    return entry.save().then((updatedEntry)=>response.json(updatedEntry))
+  })
+  .catch(error=>next(error))
 })
 
 app.get('/api/persons/:id', (request, response) => {
@@ -93,13 +96,23 @@ app.get('/api/persons/:id', (request, response) => {
     .then((entry)=>{
       entry ? response.json(entry) : response.status(404).end()
     })
+    .catch(error=>{
+      console.log(error)
+      response.status(400).send({error: `malformatted id`})
+    })
     
 })
 
-app.delete('/api/persons/:id', (request, response) => {
+app.delete('/api/persons/:id', (request, response, next) => {
     const id=request.params.id
-    persons=persons.filter(person=> person.id !== id)
-    response.status(204).end()
+
+    Entry
+    .findByIdAndDelete(id)
+    .then(result=>{
+      response.status(204).end()
+    })
+    .catch(error=>next(error))
+    
     
 })
 
@@ -108,6 +121,17 @@ const unknownEndpoint = (request, response) => {
 }
 
 app.use(unknownEndpoint)
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
+
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'malformatted id' })
+  } 
+
+  next(error)
+}
+app.use(errorHandler)
 
 const PORT = process.env.PORT ||3001
 app.listen(PORT, () => {
