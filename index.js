@@ -1,10 +1,14 @@
 const express = require('express')
+require('dotenv').config
 const morgan=require('morgan')
+const cors=require('cors')
+const Entry=require('./models/entry')
+const app = express()
+
 morgan.token(`details`,function(req,res){
   return JSON.stringify(req.body)
 })
-const cors=require('cors')
-const app = express()
+
 app.use(express.static('dist'))
 app.use(express.json())
 app.use(morgan(':method :url :status :res[content-length]- :response-time ms :details'))
@@ -45,7 +49,7 @@ app.get('/info', (request, response) => {
 })
 
 app.get('/api/persons', (request, response) => {
-  response.json(persons)
+  Entry.find({}).then(entries=>response.json(entries))
 })
 
 const generateID=()=>{
@@ -64,14 +68,14 @@ app.post('/api/persons', (request, response) => {
     if(persons.find(person=>body.name==person.name)){
         return response.status(400).json({error:`Name Already Entered`})
     }
-    const person={
+    const entry= new Entry({
         name: body.name,
         number: body.number,
         id: generateID()
-    }
-    persons=persons.concat(person)
-    
-    response.json(person)
+    })
+    entry
+    .save()
+    .then(savedEntry=>response.json(savedEntry))
 })
 
 app.put('/api/persons/:id', (request,response)=>{
