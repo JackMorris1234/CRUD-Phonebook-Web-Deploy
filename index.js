@@ -1,11 +1,12 @@
 const express = require('express')
 require('dotenv').config()
-const morgan=require('morgan')
-const cors=require('cors')
-const Entry=require('./models/entry')
+const morgan = require('morgan')
+const cors = require('cors')
+const Entry = require('./models/entry')
 const app = express()
 
-morgan.token(`details`,function(req,res){
+
+morgan.token('details', function (req) {
   return JSON.stringify(req.body)
 })
 
@@ -15,47 +16,46 @@ app.use(morgan(':method :url :status :res[content-length]- :response-time ms :de
 app.use(cors())
 
 // let persons = [
-//     { 
+//     {
 //       "id": "1",
-//       "name": "Arto Hellas", 
+//       "name": "Arto Hellas",
 //       "number": "040-123456"
 //     },
-//     { 
+//     {
 //       "id": "2",
-//       "name": "Ada Lovelace", 
+//       "name": "Ada Lovelace",
 //       "number": "39-44-5323523"
 //     },
-//     { 
+//     {
 //       "id": "3",
-//       "name": "Dan Abramov", 
+//       "name": "Dan Abramov",
 //       "number": "12-43-234345"
 //     },
-//     { 
+//     {
 //       "id": "4",
-//       "name": "Mary Poppendieck", 
+//       "name": "Mary Poppendieck",
 //       "number": "39-23-6423122"
 //     },
-//     { 
+//     {
 //       "id": "5",
-//       "name": "May Poppendieck", 
+//       "name": "May Poppendieck",
 //       "number": "38-23-6423122"
 //     }
 // ]
 
-
 app.get('/info', (request, response) => {
-  const dateTime=new Date()
+  const dateTime = new Date()
   Entry
-  .countDocuments({})
-  .then(counted=>response.send(`<p>PhoneBook has info for ${counted} people</p> <p>${dateTime}</p>`))
-  
+    .countDocuments({})
+    .then(counted => response.send(`<p>PhoneBook has info for ${counted} people</p> <p>${dateTime}</p>`))
+
 })
 
-app.get('/api/persons', (request, response) => {
+app.get('/api/persons', (request, response, next) => {
   Entry
-  .find({})
-  .then(entries=>response.json(entries))
-  .catch(error=>next(error))
+    .find({})
+    .then(entries => response.json(entries))
+    .catch(error => next(error))
 })
 
 // const generateID=()=>{
@@ -66,58 +66,58 @@ app.get('/api/persons', (request, response) => {
 // }
 
 app.post('/api/persons', (request, response, next) => {
-    const body=request.body
-    
-    if (!body.name || !body.number){
-        return response.status(400).json({error:`content missing`})
-    }
-    const entry= new Entry({
-        name: body.name,
-        number: body.number
-    })
-    entry
-    .save()
-    .then(savedEntry=>response.json(savedEntry))
-    .catch(error=>next(error))
-})
+  const body = request.body
 
-app.put('/api/persons/:id', (request,response)=>{
-  const id=request.params.id
-  const body=request.body
-  Entry
-  .findById(id)
-  .then(entry=>{
-    if(!entry){
-      return response.status(404).end()
-    }
-    entry.number=body.number
-    return entry.save().then((updatedEntry)=>response.json(updatedEntry))
+  if (!body.name || !body.number) {
+    return response.status(400).json({ error: 'content missing' })
+  }
+  const entry = new Entry({
+    name: body.name,
+    number: body.number
   })
-  .catch(error=>next(error))
+  entry
+    .save()
+    .then(savedEntry => response.json(savedEntry))
+    .catch(error => next(error))
 })
 
-app.get('/api/persons/:id', (request, response) => {
-    const id=request.params.id
-    Entry
+app.put('/api/persons/:id', (request, response, next) => {
+  const id = request.params.id
+  const body = request.body
+  Entry
     .findById(id)
-    .then((entry)=>{
+    .then(entry => {
+      if (!entry) {
+        return response.status(404).end()
+      }
+      entry.number = body.number
+      return entry.save().then((updatedEntry) => response.json(updatedEntry))
+    })
+    .catch(error => next(error))
+})
+
+app.get('/api/persons/:id', (request, response, next) => {
+  const id = request.params.id
+  Entry
+    .findById(id)
+    .then((entry) => {
       entry ? response.json(entry) : response.status(404).end()
     })
-    .catch(error=>next(error))
-    
+    .catch(error => next(error))
+
 })
 
 app.delete('/api/persons/:id', (request, response, next) => {
-    const id=request.params.id
+  const id = request.params.id
 
-    Entry
+  Entry
     .findByIdAndDelete(id)
-    .then(result=>{
+    .then(() => {
       response.status(204).end()
     })
-    .catch(error=>next(error))
-    
-    
+    .catch(error => next(error))
+
+
 })
 
 const unknownEndpoint = (request, response) => {
@@ -127,19 +127,17 @@ const unknownEndpoint = (request, response) => {
 app.use(unknownEndpoint)
 
 const errorHandler = (error, request, response, next) => {
-  console.error("backend error handling: ",error.message)
+  console.error('backend error handling: ', error.message)
 
   if (error.name === 'CastError') {
     return response.status(400).send({ error: 'malformatted id' })
-  }else if(error.name==="ValidationError"){
-    return response.status(400).json({error: error.message})
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message })
   }
-
   next(error)
 }
 app.use(errorHandler)
-
-const PORT = process.env.PORT ||3001
+const PORT = process.env.PORT || 3001
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
